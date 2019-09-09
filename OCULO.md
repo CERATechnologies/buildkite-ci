@@ -14,25 +14,10 @@
 
 You require a secrets bucket for each region you want to deploy in. This gets deployed to the shared services account only
 
-*  Add the following configuration to buildkite-ci/sceptre/.buildkite/pipeline.yml for each desired region:
+For each region:
 
-```yaml
-- label: ":aws: Regional - <region>"
-    plugins:
-      - ecr#v1.2.0:
-          login: true
-          account_ids: "644358627301"
-      - thedyrt/change-directory#v0.1.1:
-          cd: ./sceptre
-      - cultureamp/aws-assume-role#v0.1.0:
-          role: "arn:aws:iam::644358627301:role/role-sts-oculo-continuous-integration"
-      - docker-compose#v3.0.0:
-          run: infrastructure_tools
-          shell: false
-          command: ["sh", "-c", "merge-cfn-templates --cfn_templates_directory /sceptre/templates/regional && \
-            sceptre --var aws_region=<region> launch regional --yes"]
-
-```
-
-* Once done, run the [https://buildkite.com/oculo-1/aws-buildkite-regional] build to apply changes
+* Duplicate a region entry from [sceptre/.buildkite/pipeline.yml](sceptre/.buildkite/pipeline.yml) and change
+  * the label
+  * the `aws_region=` argument in the command 
+* Once done, run the https://buildkite.com/oculo-1/aws-buildkite-regional \[↗\] build to apply changes
 
