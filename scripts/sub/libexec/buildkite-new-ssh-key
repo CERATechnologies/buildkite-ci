@@ -5,6 +5,7 @@
 #   Examples:
 #
 #   buildkite new-ssh-key my-new-app-pipeline-slug
+#
 
 set -eo pipefail
 
