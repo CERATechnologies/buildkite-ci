@@ -502,9 +502,6 @@ Mappings:
     eu-north-1 : { Bucket: "buildkite-lambdas-eu-north-1" }
     sa-east-1 : { Bucket: "buildkite-lambdas-sa-east-1" }
 
-  # Generated from Makefile via build/mappings.yml
-  AWSRegion2AMI: { linux: !Ref ImageId, windows: !Ref ImageId }
-
 Resources:
   Vpc:
     Type: AWS::EC2::VPC
@@ -768,7 +765,7 @@ Resources:
               SpotOptions:
                 MaxPrice: !Ref SpotPrice
             - !Ref "AWS::NoValue"
-          ImageId: !If [ UseDefaultAMI, !FindInMap [ AWSRegion2AMI, !Ref 'AWS::Region', !Ref InstanceOperatingSystem ], !Ref ImageId ]
+          ImageId: !Ref ImageId
           BlockDeviceMappings:
             - DeviceName: !If [ UseDefaultRootVolumeName, !If [ UseWindowsAgents, /dev/sda1, /dev/xvda ], !Ref RootVolumeName ]
               Ebs: { VolumeSize: !Ref RootVolumeSize, VolumeType: !Ref RootVolumeType }
