@@ -9,6 +9,8 @@ Metadata:
           default: Buildkite Configuration
         Parameters:
         - BuildkiteAgentToken
+        - BuildkiteAgentTokenParameterStorePath
+        - BuildkiteAgentTokenParameterStoreKMSKey
         - BuildkiteQueue
 
       - Label:
@@ -102,7 +104,17 @@ Parameters:
     Description: Buildkite agent registration token
     Type: String
     NoEcho: true
-    MinLength: 1
+    Default: ""
+
+  BuildkiteAgentTokenParameterStorePath:
+    Description: AWS SSM path to the Buildkite agent registration token (this takes precedence over BuildkiteAgentToken)
+    Type: String
+    Default: ""
+
+  BuildkiteAgentTokenParameterStoreKMSKey:
+    Description: AWS KMS key ID used to encrypt the SSM parameter (if encrypted)
+    Type: String
+    Default: ""
 
   BuildkiteAgentTags:
     Description: Additional tags seperated by commas to provide to the agent. E.g os=linux,llamas=always
@@ -233,7 +245,7 @@ Parameters:
   InstanceCreationTimeout:
     Description: Timeout period for Autoscaling Group Creation Policy
     Type: String
-    Default: "PT5M"
+    Default: ""
 
   RootVolumeSize:
     Description: Size of each instance's root EBS volume (in GB)
@@ -364,19 +376,33 @@ Parameters:
     Default: "false"
 
 Outputs:
+  VpcId:
+    Value:
+      !If [ CreateVpcResources, !Ref Vpc, !Ref VpcId ]
+    Export:
+      Name: !Sub '${AWS::StackName}-VpcId'
+
   ManagedSecretsBucket:
     Value:
-      !If [CreateSecretsBucket, !Ref ManagedSecretsBucket, "" ]
+      !If [ CreateSecretsBucket, !Ref ManagedSecretsBucket, "Undefined" ]
+    Export:
+      Name: !Sub '${AWS::StackName}-ManagedSecretsBucket'
 
   ManagedSecretsLoggingBucket:
     Value:
-      !If [CreateSecretsBucket, !Ref ManagedSecretsLoggingBucket, "" ]
+      !If [ CreateSecretsBucket, !Ref ManagedSecretsLoggingBucket, "Undefined" ]
+    Export:
+      Name: !Sub '${AWS::StackName}-ManagedSecretsLoggingBucket'
 
   AutoScalingGroupName:
     Value: !Ref AgentAutoScaleGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-AutoScalingGroupName'
 
   InstanceRoleName:
     Value: !Ref IAMRole
+    Export:
+      Name: !Sub '${AWS::StackName}-InstanceRoleName'
 
 Conditions:
     UseSpotInstances:
@@ -406,6 +432,9 @@ Conditions:
     UseDefaultAMI:
       !Equals [ !Ref ImageId, "" ]
 
+    UseDefaultInstanceCreationTimeout:
+      !Equals [ !Ref InstanceCreationTimeout, "" ]
+
     UseDefaultRootVolumeName:
       !Equals [ !Ref RootVolumeName, "" ]
 
@@ -414,6 +443,12 @@ Conditions:
 
     UseECR:
       !Not [ !Equals [ !Ref ECRAccessPolicy, "none" ] ]
+
+    UseSSMAgentToken:
+      !Not [ !Equals [ !Ref BuildkiteAgentTokenParameterStorePath, "" ] ]
+
+    UseCustomerManagedKeyForParameterStore:
+      !Not [ !Equals [ !Ref BuildkiteAgentTokenParameterStoreKMSKey, "" ] ]
 
     HasVariableSize:
       !Not [ !Equals [ !Ref MaxSize, !Ref MinSize ] ]
@@ -464,11 +499,11 @@ Mappings:
     eu-west-1 : { Bucket: "buildkite-lambdas-eu-west-1" }
     eu-west-2 : { Bucket: "buildkite-lambdas-eu-west-2" }
     eu-west-3 : { Bucket: "buildkite-lambdas-eu-west-3" }
+    eu-north-1 : { Bucket: "buildkite-lambdas-eu-north-1" }
     sa-east-1 : { Bucket: "buildkite-lambdas-sa-east-1" }
 
   # Generated from Makefile via build/mappings.yml
-  AWSRegion2AMI:
-    ap-southeast-2: { linux: "we use a custom AMI" }
+  AWSRegion2AMI: { linux: !Ref ImageId, windows: !Ref ImageId }
 
 Resources:
   Vpc:
@@ -632,6 +667,12 @@ Resources:
     DeletionPolicy: Retain
     Properties:
       AccessControl: LogDeliveryWrite
+      Tags:
+        - !If
+          - UseCostAllocationTags
+          - Key: !Ref CostAllocationTagName
+            Value: !Ref CostAllocationTagValue
+          - !Ref "AWS::NoValue"
 
   ManagedSecretsBucket:
     Type: AWS::S3::Bucket
@@ -642,6 +683,12 @@ Resources:
         DestinationBucketName: !Ref ManagedSecretsLoggingBucket
       VersioningConfiguration:
         Status: Enabled
+      Tags:
+        - !If
+          - UseCostAllocationTags
+          - Key: !Ref CostAllocationTagName
+            Value: !Ref CostAllocationTagValue
+          - !Ref "AWS::NoValue"
 
   ManagedSecretsBucketPolicy:
     Type: AWS::IAM::Policy
@@ -688,9 +735,14 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
-              - s3:Put*
-              - s3:List*
-              - s3:Get*
+              - s3:GetObject
+              - s3:GetObjectAcl
+              - s3:GetObjectVersion
+              - s3:GetObjectVersionAcl
+              - s3:ListBucket
+              - s3:PutObject
+              - s3:PutObjectAcl
+              - s3:PutObjectVersionAcl
             Resource:
               - !Sub "arn:aws:s3:::${ArtifactsBucket}/*"
               - !Sub "arn:aws:s3:::${ArtifactsBucket}"
@@ -747,10 +799,11 @@ Resources:
                   powershell -file C:\buildkite-agent\bin\bk-configure-docker.ps1 >> C:\buildkite-agent\elastic-stack.log
 
                   $Env:BUILDKITE_STACK_NAME="${AWS::StackName}"
-                  $Env:BUILDKITE_STACK_VERSION=%v
+                  $Env:BUILDKITE_STACK_VERSION="%v"
                   $Env:BUILDKITE_SCALE_IN_IDLE_PERIOD="${ScaleInIdlePeriod}"
                   $Env:BUILDKITE_SECRETS_BUCKET="${LocalSecretsBucket}"
                   $Env:BUILDKITE_AGENT_TOKEN="${BuildkiteAgentToken}"
+                  $Env:BUILDKITE_AGENT_TOKEN_PATH="${BuildkiteAgentTokenParameterStorePath}"
                   $Env:BUILDKITE_AGENTS_PER_INSTANCE="${AgentsPerInstance}"
                   $Env:BUILDKITE_AGENT_TAGS="${BuildkiteAgentTags}"
                   $Env:BUILDKITE_AGENT_TIMESTAMP_LINES="${BuildkiteAgentTimestampLines}"
@@ -791,6 +844,7 @@ Resources:
                   BUILDKITE_SCALE_IN_IDLE_PERIOD=${ScaleInIdlePeriod} \
                   BUILDKITE_SECRETS_BUCKET="${LocalSecretsBucket}" \
                   BUILDKITE_AGENT_TOKEN="${BuildkiteAgentToken}" \
+                  BUILDKITE_AGENT_TOKEN_PATH="${BuildkiteAgentTokenParameterStorePath}" \
                   BUILDKITE_AGENTS_PER_INSTANCE="${AgentsPerInstance}" \
                   BUILDKITE_AGENT_TAGS="${BuildkiteAgentTags}" \
                   BUILDKITE_AGENT_TIMESTAMP_LINES="${BuildkiteAgentTimestampLines}" \
@@ -837,7 +891,7 @@ Resources:
         - ClosestToNextInstanceHour
     CreationPolicy:
       ResourceSignal:
-        Timeout: !Ref InstanceCreationTimeout
+        Timeout: !If [ UseDefaultInstanceCreationTimeout, !If [ UseWindowsAgents, PT10M, PT5M ], !Ref InstanceCreationTimeout ]
         Count: !Ref MinSize
     UpdatePolicy:
       AutoScalingReplacingUpdate:
@@ -880,23 +934,58 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName: AutoScalingGroups
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-            - Effect: Allow
-              Action:
-                - autoscaling:DescribeAutoScalingGroups
-                - autoscaling:SetDesiredCapacity
-              Resource: '*'
-        - PolicyName: WriteCloudwatchMetrics
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-            - Effect: Allow
-              Action:
-                - cloudwatch:PutMetricData
-              Resource: '*'
+        !If
+          - UseCustomerManagedKeyForParameterStore
+          - - PolicyName: AutoScalingGroups
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                - Effect: Allow
+                  Action:
+                    - autoscaling:DescribeAutoScalingGroups
+                    - autoscaling:SetDesiredCapacity
+                  Resource: '*'
+            - PolicyName: DecryptAgentToken
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                - Effect: Allow
+                  Action:
+                    - kms:Decrypt
+                  Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${BuildkiteAgentTokenParameterStoreKMSKey}
+            - PolicyName: ReadAgentToken
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                - Effect: Allow
+                  Action:
+                    - ssm:GetParameter
+                  Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${BuildkiteAgentTokenParameterStorePath}
+            - PolicyName: WriteCloudwatchMetrics
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                - Effect: Allow
+                  Action:
+                    - cloudwatch:PutMetricData
+                  Resource: '*'
+          - - PolicyName: AutoScalingGroups
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                - Effect: Allow
+                  Action:
+                    - autoscaling:DescribeAutoScalingGroups
+                    - autoscaling:SetDesiredCapacity
+                  Resource: '*'
+            - PolicyName: WriteCloudwatchMetrics
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                - Effect: Allow
+                  Action:
+                    - cloudwatch:PutMetricData
+                  Resource: '*'
 
   # This mirrors the group that would be created by the lambda, but enforces
   # a retention period and also ensures it's removed when the stack is removed
@@ -921,7 +1010,8 @@ Resources:
       MemorySize: 128
       Environment:
         Variables:
-          BUILDKITE_AGENT_TOKEN: !Ref BuildkiteAgentToken
+          BUILDKITE_AGENT_TOKEN: !If [ UseSSMAgentToken, !Ref 'AWS::NoValue', !Ref BuildkiteAgentToken ]
+          BUILDKITE_AGENT_TOKEN_SSM_KEY: !Ref BuildkiteAgentTokenParameterStorePath
           BUILDKITE_QUEUE:       !Ref BuildkiteQueue
           AGENTS_PER_INSTANCE:   !Ref AgentsPerInstance
           CLOUDWATCH_METRICS:    "1"

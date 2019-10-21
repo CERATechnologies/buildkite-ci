@@ -21,3 +21,9 @@ For each region:
   * the `aws_region=` argument in the command 
 * Once done, run the https://buildkite.com/oculo-1/aws-buildkite-regional \[↗\] build to apply changes
 
+# Updating Buildkite plugins
+
+```bash 
+git submodule update --init --recursive 
+git submodule status
+```

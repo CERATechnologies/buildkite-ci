@@ -1,29 +1,30 @@
 {
+  "variables": {
+    "region": "ap-southeast-2",
+    "instance_type": "i3.large"
+  },
   "builders": [
     {
       "type": "amazon-ebs",
-      "region": "ap-southeast-2",
-      "instance_type": "i3.large",
-      "spot_price": "auto",
-      "spot_price_auto_product": "Linux/UNIX (Amazon VPC)",
-      "ssh_username": "ec2-user",
-      "ami_name": "Oculo Buildkite Server {{timestamp}}",
-      "ami_description": "Buildkite Elastic Stack (Amazon Linux 2 LTS w/ docker)",
+      "region": "{{user `region`}}",
       "source_ami_filter": {
         "filters": {
-          "name": "amzn2-ami-hvm-2.0.2019*",
+          "name": "amzn2-ami-hvm-2.0.*-gp2",
           "architecture": "x86_64",
-          "virtualization-type": "hvm",
-          "root-device-type": "ebs",
-          "block-device-mapping.volume-type": "gp2"
+          "virtualization-type": "hvm"
         },
-        "owners": ["137112412989"],
+        "owners": ["amazon"],
         "most_recent": true
       },
       "tags": {
         "Amazon_AMI_Management_Identifier": "oculo_buildkite_server_ami",
         "source_ami": "{{ .SourceAMI }}"
-      }
+      },
+      "instance_type": "{{user `instance_type`}}",
+      "spot_price": "auto",
+      "spot_price_auto_product": "Linux/UNIX (Amazon VPC)",
+      "ssh_username": "ec2-user",
+      "ami_description": "Buildkite Elastic Stack (Amazon Linux 2 LTS w/ docker)"
     }
   ],
   "provisioners": [
@@ -34,7 +35,7 @@
     },
     {
       "type": "file",
-      "source": "../plugins",
+      "source": "../../plugins",
       "destination": "/tmp/plugins"
     },
     {
@@ -67,7 +68,9 @@
     },
     {
       "type": "shell",
-      "script": "scripts/install-dev-ssh-keys.sh"
+      "inline": [
+        "rm /home/ec2-user/.ssh/authorized_keys"
+      ]
     },
     {
       "type": "shell",

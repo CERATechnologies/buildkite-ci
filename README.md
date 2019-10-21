@@ -35,6 +35,7 @@ Features:
 - [What Type of Builds Does This Support?](#what-type-of-builds-does-this-support)
 - [Multiple Instances of the Stack](#multiple-instances-of-the-stack)
 - [Autoscaling](#autoscaling)
+- [Terminating the instance after job is complete](#terminating-the-instance-after-job-is-complete)
 - [Docker Registry Support](#docker-registry-support)
 - [Versions](#versions)
 - [Updating Your Stack](#updating-your-stack)
@@ -110,9 +111,9 @@ If you really want to store your secrets unencrypted, you can disable it entirel
 ## What’s On Each Machine?
 
 * [Amazon Linux 2 LTS](https://aws.amazon.com/amazon-linux-2/)
-* [Buildkite Agent v3.8.2](https://buildkite.com/docs/agent)
-* [Docker 18.09.1](https://www.docker.com)
-* [Docker Compose 1.23.2](https://docs.docker.com/compose/)
+* [Buildkite Agent v3.13.2](https://buildkite.com/docs/agent)
+* [Docker 19.03.2](https://www.docker.com)
+* [Docker Compose 1.24.1](https://docs.docker.com/compose/)
 * [aws-cli](https://aws.amazon.com/cli/) - useful for performing any ops-related tasks
 * [jq](https://stedolan.github.io/jq/) - useful for manipulating JSON responses from cli tools such as aws-cli or the Buildkite API
 
@@ -143,6 +144,14 @@ If you have configured `MinSize` < `MaxSize`, the stack will automatically scale
 This means you can scale down to zero when idle, which means you can use larger instances for the same cost.
 
 Metrics are collected with a Lambda function, polling every minute.
+
+## Terminating the instance after job is complete
+
+You may set `BuildkiteTerminateInstanceAfterJob` to `true` to force the instance to terminate after it completes a job. Setting this value to `true` tells the stack to enable `disconnect-after-job` in the `buildkite-agent.cfg` file.
+
+While not enforced, it is highly recommended you also set your `AgentsPerInstance` value to `1`.
+
+We strongly encourage you to find an alternative to this setting if at all possible. The turn around time for replacing these instances is currently slow (5-10 minutes depending on other stack configuration settings). If you need single use jobs, we suggest looking at our container plugins like `docker`, `docker-compose`, and `ecs`, all which can be found [here](https://buildkite.com/plugins).
 
 ## Docker Registry Support
 
@@ -197,7 +206,7 @@ Within each stream the logs are grouped by instance id.
 
 To debug an agent first find the instance id from the agent in Buildkite, head to your [CloudWatch Logs Dashboard](https://console.aws.amazon.com/cloudwatch/home?#logs:), choose either the system or Buildkite Agent log group, and then search for the instance id in the list of log streams.
 
-# Customizing Instances with a Bootstrap Script
+## Customizing Instances with a Bootstrap Script
 
 You can customize your stack’s instances by using the `BootstrapScriptUrl` stack parameter to run a bash script on instance boot. To set up a bootstrap script, create an S3 bucket with the script, and set the `BootstrapScriptUrl` parameter, for example `s3://my_bucket_name/my_bootstrap.sh`.
 
@@ -267,7 +276,7 @@ Also keep in mind the EC2 HTTP metadata server is available from within builds, 
 To get started with customizing your own stack, or contributing fixes and features:
 
 ```bash
-# Build an AMI
+# Build all AMIs
 make build
 
 # Or, to set things up locally and create the stack on AWS
