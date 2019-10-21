@@ -13,7 +13,7 @@ parameters:
   CostAllocationTagValue: buildkite-elastic-ci-stack-for-aws
   ECRAccessPolicy: poweruser
   EnableCostAllocationTags: "false"
-  EnableDockerExperimental: "false"
+  EnableDockerExperimental: "true"
   EnableDockerLoginPlugin: "true"
   EnableDockerUserNamespaceRemap: "true"
   EnableECRPlugin: "true"
