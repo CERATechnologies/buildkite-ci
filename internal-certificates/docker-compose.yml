@@ -1,0 +1,15 @@
+version: '3.7'
+
+services:
+  minica:
+    init: true
+    build: .
+    image: buildkite_minica
+    volumes:
+    - ./certificates:/certificates
+    working_dir: /certificates
+    environment:
+      AWS_DEFAULT_REGION: "ap-southeast-2"
+      AWS_ACCESS_KEY_ID:
+      AWS_SECRET_ACCESS_KEY:
+      AWS_SESSION_TOKEN:

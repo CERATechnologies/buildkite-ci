@@ -6,3 +6,8 @@ set -eo pipefail
 
 git submodule update --init --recursive
 docker-compose build
+
+cd internal-certificates
+docker-compose build
+docker-compose run --rm minica /root/fetch-root-cert.sh
+cd -
