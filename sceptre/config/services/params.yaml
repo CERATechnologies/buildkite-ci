@@ -23,8 +23,8 @@ parameters:
   InstanceRoleName: buildkite-instance-role
   InstanceType: c4.large
   ManagedPolicyARN: arn:aws:iam::644358627301:policy/BuildkitePolicy,arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
-  MaxSize: "32"
-  MinSize: "8"
+  MaxSize: "60"
+  MinSize: "5"
   RootVolumeSize: "250"
   SecretsBucket: oculo-services-buildkite-secrets
 # By turning off the KeyName, we disable SSH Ingress entirely to the BK instances
