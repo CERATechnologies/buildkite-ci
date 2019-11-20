@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Usage: buildkite new-private-certificate [action]
+# Summary: Generate a certificate for a service on a private service discovery network
+# Help:
+#   Examples:
+#
+#   buildkite new-private-certificate my-buildkite-slug app-name ecs-cluster
+#
+
+set -eo pipefail
+
+
+
+echo ""
+echo "Done"
