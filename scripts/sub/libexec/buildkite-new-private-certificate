@@ -9,7 +9,5 @@
 
 set -eo pipefail
 
-
-
 echo ""
 echo "Done"

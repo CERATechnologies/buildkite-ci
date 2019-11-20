@@ -4,10 +4,10 @@
 
 set -eo pipefail
 
-git submodule update --init --recursive
-docker-compose build
+#git submodule update --init --recursive
+#docker-compose build
 
 cd internal-certificates
+echo "Be sure to have set AWS_ACCESS_KEY_ID et al, for the shared-services account (e.g. using aws-vault)"
 docker-compose build
-docker-compose run --rm minica /root/fetch-root-cert.sh
 cd -
