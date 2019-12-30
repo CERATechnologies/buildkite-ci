@@ -12,5 +12,7 @@ ARG AWS_SESSION_TOKEN
 RUN mkdir -p /certificates /root-certificate
 RUN aws s3 sync s3://oculo-services-buildkite-secrets/root-mini-ca/ /root-certificate/
 
+COPY generate-certificate.sh /root/
+
 WORKDIR /certificates
 CMD ["minica"]

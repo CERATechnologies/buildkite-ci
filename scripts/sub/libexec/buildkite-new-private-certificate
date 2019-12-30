@@ -9,5 +9,10 @@
 
 set -eo pipefail
 
+
+
+docker-compose run --rm minici
+
 echo ""
 echo "Done"
+                                                       s
