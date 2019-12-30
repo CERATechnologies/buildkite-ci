@@ -21,7 +21,7 @@ parameters:
   ImageId: !oculo_ami_id '*Oculo Buildkite Server*'
   InstanceCreationTimeout: PT5M
   InstanceRoleName: buildkite-instance-role
-  InstanceType: c4.large
+  InstanceType: r5.large
   ManagedPolicyARN: arn:aws:iam::644358627301:policy/BuildkitePolicy,arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
   MaxSize: "60"
   MinSize: "5"

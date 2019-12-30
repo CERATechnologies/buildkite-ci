@@ -76,6 +76,10 @@
     {
       "type": "shell",
       "script": "../oculo-scripts/install-cc-reporter.sh"
+    },
+    {
+      "type": "shell",
+      "script": "../oculo-scripts/add-ramdisk-tmpfs.sh"
     }
   ],
   "post-processors": [
