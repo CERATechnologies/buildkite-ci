@@ -21,15 +21,15 @@ parameters:
   ImageId: !oculo_ami_id '*Oculo Buildkite Server*'
   InstanceCreationTimeout: PT5M
   InstanceRoleName: buildkite-instance-role
-  InstanceType: r5.large
+  InstanceType: r5.xlarge
   ManagedPolicyARN: arn:aws:iam::644358627301:policy/BuildkitePolicy,arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
   MaxSize: "60"
   MinSize: "5"
   RootVolumeSize: "250"
   ScaleInIdlePeriod: "900"
   SecretsBucket: oculo-services-buildkite-secrets
-  SpotPrice: "0.060"
+  SpotPrice: "0.090"
   SleepyTime: !timestamp_from_local 19:45
   BreakfastTime: !timestamp_from_local 08:15
   VpcId: "vpc-65745902"
-  Subnets: subnet-184e5b7f,subnet-e4ab2fbc
+  Subnets: subnet-184e5b7f,subnet-e4ab2fbc,subnet-6695922f
