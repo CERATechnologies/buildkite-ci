@@ -25,7 +25,7 @@ parameters:
   ManagedPolicyARN: arn:aws:iam::644358627301:policy/BuildkitePolicy,arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
   MaxSize: "60"
   MinSize: "5"
-  RootVolumeSize: "250"
+  RootVolumeSize: "10"
   ScaleInIdlePeriod: "900"
   SecretsBucket: oculo-services-buildkite-secrets
   SpotPrice: "0.090"
