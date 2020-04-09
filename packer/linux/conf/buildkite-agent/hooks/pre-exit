@@ -8,3 +8,8 @@ if [[ -n "${BUILDKITE_SECRETS_BUCKET:-}" &&  "${SECRETS_PLUGIN_ENABLED:-}" == "1
   # shellcheck source=/dev/null
   source /usr/local/buildkite-aws-stack/plugins/secrets/hooks/pre-exit
 fi
+
+if ! /usr/local/bin/bk-check-disk-space.sh ; then
+  echo "Will terminate instance due to low (RAM) disk space"
+  (sleep 10; /usr/local/bin/terminate-instance) &
+fi
