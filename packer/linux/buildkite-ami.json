@@ -80,6 +80,10 @@
     {
       "type": "shell",
       "script": "../oculo-scripts/add-ramdisk-tmpfs.sh"
+    },
+    {
+      "type": "shell",
+      "script": "../oculo-scripts/install-ruby.sh"
     }
   ],
   "post-processors": [
