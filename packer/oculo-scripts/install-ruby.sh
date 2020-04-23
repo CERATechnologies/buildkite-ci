@@ -3,4 +3,4 @@
 set -euxo pipefail
 
 sudo amazon-linux-extras install ruby2.6
-sudo gem install bundler aws-sdk-kms aws-sdk-ecs
+sudo gem install bundler bundler:1.17.3 aws-sdk-kms aws-sdk-ecs
