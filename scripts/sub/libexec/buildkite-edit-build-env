@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Usage: buildkite edit-build-env [pipeline-slug]
+# Summary: Edit the secrets env file for a build
+# Help:
+#   Examples:
+#
+#   aws-vault exec shared-services -- buildkite edit-build-env my-pipeline-slug
+#
+
+: "${1:?"Need to pass in the Buildkite pipeline slug"}"
+SLUG=$1
+
+COOL_KIDS_USE_VIM=${EDITOR:-vim}
+
+cd /tmp || exit
+
+SECRETS_BUCKET="oculo-services-buildkite-secrets/${SLUG}"
+aws s3 cp --acl private --sse aws:kms "s3://${SECRETS_BUCKET}/env" project-env
+
+${COOL_KIDS_USE_VIM} project-env
+
+read -p "Commit changes? (Y/N) " -n 1 -r
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+  aws s3 cp --acl private --sse aws:kms project-env "s3://${SECRETS_BUCKET}/env"
+  echo ""
+  echo "Env updated!"
+fi
+
+rm project-env
+
+cd - >/dev/null || exit
