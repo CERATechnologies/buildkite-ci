@@ -28,7 +28,7 @@ parameters:
   RootVolumeSize: "10"
   ScaleInIdlePeriod: "900"
   SecretsBucket: oculo-services-buildkite-secrets
-  SpotPrice: "0.1"
+  SpotPrice: "0.105"
   SleepyTime: !timestamp_from_local 19:45
   BreakfastTime: !timestamp_from_local 08:15
   VpcId: "vpc-65745902"
